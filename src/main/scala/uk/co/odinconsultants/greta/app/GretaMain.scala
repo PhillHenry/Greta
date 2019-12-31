@@ -12,7 +12,9 @@ object GretaMain extends IOApp {
     ???
   }
 
-  def parse(args: Seq[String]): Either[Help, DeployImageConfig] = {
+  type Parsing = Either[Help, DeployImageConfig]
+
+  def parse(args: Seq[String]): Parsing = {
     import CLIParsing._
     val options = (endpointOpt, imageOpt).mapN { (url, img) =>
       DeployImageConfig(url.head, img.head)
