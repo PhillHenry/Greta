@@ -22,6 +22,7 @@
     <scala.compat.version>2.12</scala.compat.version>
     <cats.version>2.0.0</cats.version>
     <kubernetes-client.version>4.6.4</kubernetes-client.version>
+    <kubernetesio.version>5.0.0</kubernetesio.version>
   </properties>
 
   <dependencies>
@@ -90,9 +91,15 @@
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java</artifactId>
-      <version>5.0.0</version>
-      <scope>compile</scope>
+      <version>${kubernetesio.version}</version>
     </dependency>
+    <!--
+    <dependency>
+      <groupId>io.kubernetes</groupId>
+      <artifactId>client-java-api</artifactId>
+      <version>${kubernetesio.version}</version>
+    </dependency>
+    -->
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-client</artifactId>
@@ -106,8 +113,6 @@
   </dependencies>
 
   <build>
-    <sourceDirectory>src/main/scala</sourceDirectory>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
     <plugins>
       <plugin>
         <!-- see http://davidb.github.com/scala-maven-plugin -->
@@ -178,6 +183,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>7</source>
+          <target>7</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>
