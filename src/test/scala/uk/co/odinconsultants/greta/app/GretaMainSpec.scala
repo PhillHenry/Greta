@@ -10,10 +10,9 @@ class GretaMainSpec extends WordSpec with Matchers {
   val testEndpoint  = "test_endpoint"
   val testImage     = "test_image"
 
-  val endpointCLI: Seq[String] = s"--$endpointName $testEndpoint".split(" ")
-  val imageCLI: Seq[String]    = s"--$imageName $testImage".split(" ")
-
-  val happyArgs: Seq[String] = endpointCLI ++ imageCLI
+  val endpointCLI:  Seq[String] = s"--$endpointName $testEndpoint".split(" ")
+  val imageCLI:     Seq[String] = s"--$imageName $testImage".split(" ")
+  val happyArgs:    Seq[String] = endpointCLI ++ imageCLI
 
   s"Happy path arguments '${happyArgs.mkString(" ")}'" should {
     "result in a configuration object" in {
