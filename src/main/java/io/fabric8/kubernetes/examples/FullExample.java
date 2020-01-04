@@ -42,13 +42,13 @@ public class FullExample {
     private static final Logger logger = LoggerFactory.getLogger(FullExample.class);
 
     public static void main(String[] args) throws InterruptedException {
-        String master = "https://localhost:8443/";
-        if (args.length == 1) {
-            master = args[0];
-        }
+//        String master = "https://localhost:8443/";
+//        if (args.length == 1) {
+//            master = args[0];
+//        }
 
-        Config config = new ConfigBuilder().withMasterUrl(master).build();
-        try (final KubernetesClient client = new DefaultKubernetesClient(config)) {
+//        Config config = new ConfigBuilder().withMasterUrl(master).build();
+        try (final KubernetesClient client = new DefaultKubernetesClient()) {
             try (Watch watch = client.replicationControllers().inNamespace("thisisatest").withResourceVersion("0").watch(new Watcher<ReplicationController>() {
                 @Override
                 public void eventReceived(Action action, ReplicationController resource) {
@@ -84,7 +84,7 @@ public class FullExample {
                 // Create an RC
                 ReplicationController rc = new ReplicationControllerBuilder()
                         .withNewMetadata().withName("nginx-controller").addToLabels("server", "nginx").endMetadata()
-                        .withNewSpec().withReplicas(3)
+                        .withNewSpec().withReplicas(1)
                         .withNewTemplate()
                         .withNewMetadata().addToLabels("server", "nginx").endMetadata()
                         .withNewSpec()
@@ -115,8 +115,8 @@ public class FullExample {
                 ReplicationController gotRc = client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").get();
                 log("Get RC by name in namespace", gotRc);
                 // Dump the RC as YAML
-                log("Dump RC as YAML", SerializationUtils.dumpAsYaml(gotRc));
-                log("Dump RC as YAML without state", SerializationUtils.dumpWithoutRuntimeStateAsYaml(gotRc));
+//                log("Dump RC as YAML", SerializationUtils.dumpAsYaml(gotRc));
+//                log("Dump RC as YAML without state", SerializationUtils.dumpWithoutRuntimeStateAsYaml(gotRc));
 
                 // Get the RC by label
                 log("Get RC by label", client.replicationControllers().withLabel("server", "nginx").list());

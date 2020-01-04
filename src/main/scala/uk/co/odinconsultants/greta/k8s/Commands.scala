@@ -6,7 +6,11 @@ object Commands {
 
   def listPods(): Unit = {
     val client = new DefaultKubernetesClient()
-    client.pods()
+    println(client.pods())
+  }
+
+  def main(args: Array[String]): Unit = {
+    listPods()
   }
 
 }
