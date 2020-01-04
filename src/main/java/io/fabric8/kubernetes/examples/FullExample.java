@@ -72,7 +72,7 @@ public class FullExample {
                 // Get the namespace by label
                 log("Get namespace by label", client.namespaces().withLabel("this", "rocks").list());
 
-                ResourceQuota quota = new ResourceQuotaBuilder().withNewMetadata().withName("pod-quota").endMetadata().withNewSpec().addToHard("pods", new Quantity("10")).endSpec().build();
+                ResourceQuota quota = new ResourceQuotaBuilder().withNewMetadata().withName("pod-quota").endMetadata().withNewSpec().addToHard("pods", new Quantity("2")).endSpec().build();
                 log("Create resource quota", client.resourceQuotas().inNamespace("thisisatest").create(quota));
 
                 try {
@@ -131,7 +131,7 @@ public class FullExample {
                 // Update the RC
                 client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").cascading(false).edit().editMetadata().addToLabels("new", "label").endMetadata().done();
 
-                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").scale(8);
+                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").scale(1);
 
                 Thread.sleep(1000);
 
@@ -147,13 +147,15 @@ public class FullExample {
                 Thread.sleep(1000);
 
                 // Update the RC - change the image back to nginx using a rolling update
-                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").rolling().updateImage("nginx");
+                // "Existing replica set doesn't exist"
+//                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller").rolling().updateImage("nginx");
 
                 Thread.sleep(1000);
 
                 // Update the RC via rolling update with inline builder
-                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller")
-                        .rolling().edit().editMetadata().addToLabels("testing", "rolling-update").endMetadata().done();
+                // java.lang.NoSuchMethodException: io.fabric8.kubernetes.api.model.apps.DoneableReplicaSet.<init>(io.fabric8.kubernetes.api.model.apps.ReplicaSet, io.fabric8.kubernetes.api.builder.Visitor)
+//                client.replicationControllers().inNamespace("thisisatest").withName("nginx-controller")
+//                        .rolling().edit().editMetadata().addToLabels("testing", "rolling-update").endMetadata().done();
 
                 Thread.sleep(1000);
 
