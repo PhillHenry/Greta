@@ -1,16 +1,20 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient
+import io.fabric8.kubernetes.client.{DefaultKubernetesClient, KubernetesClient}
+
+import scala.collection.JavaConverters._
 
 object Commands {
 
-  def listPods(): Unit = {
-    val client = new DefaultKubernetesClient()
-    println(client.pods())
+  def listPods(client: KubernetesClient): Unit = {
+    val pods    = client.pods().list().getItems().asScala
+    println(pods.mkString("\n"))
   }
 
   def main(args: Array[String]): Unit = {
-    listPods()
+    val client  = new DefaultKubernetesClient()
+    listPods(client)
+    client.close()
   }
 
 }
