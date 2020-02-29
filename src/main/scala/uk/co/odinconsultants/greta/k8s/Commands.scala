@@ -1,6 +1,6 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString}
+import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString, Namespace, NamespaceBuilder}
 import io.fabric8.kubernetes.api.model.ServiceFluent.SpecNested
 import io.fabric8.kubernetes.client.{DefaultKubernetesClient, KubernetesClient}
 
@@ -11,19 +11,19 @@ object Commands {
   type Port = Int
   type Name = String
 
-  type Chaining = SpecNested[DoneableService] => SpecNested[DoneableService]
+  type SpecPipe = SpecNested[DoneableService] => SpecNested[DoneableService]
 
-  def publishNotReadyAddresses(x: Boolean): Chaining = _.withNewPublishNotReadyAddresses(x)
+  def publishNotReadyAddresses(x: Boolean): SpecPipe = _.withNewPublishNotReadyAddresses(x)
 
-  def clusterIP(x: String): Chaining = _.withClusterIP(x)
+  def clusterIP(x: String): SpecPipe = _.withClusterIP(x)
 
-  def withType(name: Name): Chaining = _.withType(name)
+  def withType(name: Name): SpecPipe = _.withType(name)
 
-  def addPort(name: Name, port: Port, targetPort: Name): Chaining = { x =>
+  def addPort(name: Name, port: Port, targetPort: Name): SpecPipe = { x =>
     x.addNewPort.withName(name).withPort(port).withTargetPort(new IntOrString(name)).endPort
   }
 
-  def addPort(name: Name, port: Port, targetPort: Port): Chaining = { x =>
+  def addPort(name: Name, port: Port, targetPort: Port): SpecPipe = { x =>
     x.addNewPort.withName(name).withPort(port).withNewTargetPort.withIntVal(targetPort).endTargetPort.endPort
   }
 
@@ -37,6 +37,11 @@ object Commands {
     println(pods.mkString("\n"))
   }
 
+  def createNamespace(x: Name): KubernetesClient => Namespace = { client: KubernetesClient =>
+    val ns = new NamespaceBuilder().withNewMetadata().withName(x).endMetadata().build();
+    client.namespaces().create(ns)
+  }
+
   def main(args: Array[String]): Unit = {
     val namespace = "phtest"
     val client  = new DefaultKubernetesClient()
@@ -48,6 +53,7 @@ object Commands {
       addPort("election", 3888, "election")
 
     try {
+      createNamespace(namespace)(client)
       zookeeperService(client.services().inNamespace(namespace).createNew().withNewMetadata.withName("ph-release-zookeeper-headless").endMetadata.withNewSpec).endSpec().done()
       listServices(client)
     } finally {
