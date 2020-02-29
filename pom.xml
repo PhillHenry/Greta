@@ -111,6 +111,11 @@
       <version>${kubernetes-client.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-model</artifactId>
+      <version>${kubernetes-client.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.monovore</groupId>
       <artifactId>decline_${scala.compat.version}</artifactId>
       <version>1.0.0</version>
