@@ -18,17 +18,14 @@ object ServicesOps {
 
   def withType(name: Name): SpecPipe = _.withType(name)
 
-  def addPort(name: Name, port: Port, targetPort: Name): SpecPipe = { x =>
-    x.addNewPort.withName(name).withPort(port).withTargetPort(new IntOrString(name)).endPort
-  }
+  def addPort(name: Name, port: Port, targetPort: Name): SpecPipe =
+      _.addNewPort.withName(name).withPort(port).withTargetPort(new IntOrString(name)).endPort
 
-  def addPort(name: Name, port: Port): SpecPipe = { x =>
-    x.addNewPort.withName(name).withPort(port).withNewTargetPort.withNewStrVal(name).endTargetPort.endPort
-  }
+  def addPort(name: Name, port: Port): SpecPipe =
+    _.addNewPort.withName(name).withPort(port).withNewTargetPort.withNewStrVal(name).endTargetPort.endPort
 
-  def addPort(name: Name, port: Port, targetPort: Port): SpecPipe = { x =>
-    x.addNewPort.withName(name).withPort(port).withNewTargetPort.withIntVal(targetPort).endTargetPort.endPort
-  }
+  def addPort(name: Name, port: Port, targetPort: Port): SpecPipe =
+    _.addNewPort.withName(name).withPort(port).withNewTargetPort.withIntVal(targetPort).endTargetPort.endPort
 
   def listPods(client: KubernetesClient): Unit = {
     val pods    = client.pods().list().getItems().asScala
