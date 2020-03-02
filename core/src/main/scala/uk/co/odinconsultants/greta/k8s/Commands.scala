@@ -51,46 +51,8 @@ object Commands {
 
   val ClusterIP = "ClusterIP"
 
-  val zookeeper: SpecPipe =
-    withType(ClusterIP) andThen
-    addPort("client", 2181) andThen
-    addPort("follower", 2888) andThen
-    addPort("election", 3888)
-
-  val kafka: SpecPipe =
-    withType(ClusterIP) andThen
-    addPort("kafka", 9092)
-
   type Namespaced = NonNamespaceOperation[Service, ServiceList, DoneableService, ServiceResource[Service, DoneableService]]
 
-  def main(args: Array[String]): Unit = {
-    val namespace = "phtest"
-    val client    = new DefaultKubernetesClient()
-    val namespaced: Namespaced = client.services.inNamespace(namespace)
-
-    val zookeeperHeadless: SpecPipe = zookeeper andThen
-      addClusterIP("None") andThen
-      setPublishNotReadyAddresses(false)
-
-    val kafkaHeadless: SpecPipe = kafka andThen withType(ClusterIP)
-
-    try {
-      createNamespace(namespace)(client) // TODO make this FP
-      val services = List[SpecNested[DoneableService]](
-        zookeeperHeadless(serviceFrom(namespaced, "ph-release-zookeeper-headless")),
-        zookeeper(serviceFrom(namespaced, "ph-release-zookeeper")),
-        kafka(serviceFrom(namespaced, "ph-release-kafka")),
-        kafkaHeadless(serviceFrom(namespaced, "ph-release-kafka-headless"))
-      )
-      services.map(_.endSpec().done())
-      val actualServices = listServices(client)
-      val serviceNames = actualServices.map(_.getMetadata.getName)
-
-    } finally {
-      client.namespaces.withName(namespace).delete()
-      client.close()
-    }
-  }
 
   def serviceFrom(namespaced: Namespaced, serviceName: Name): SpecNested[DoneableService] =
     namespaced.createNew.withNewMetadata.withName(serviceName).endMetadata.withNewSpec
