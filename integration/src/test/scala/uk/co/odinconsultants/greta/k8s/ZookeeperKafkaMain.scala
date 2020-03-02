@@ -1,6 +1,6 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.api.model.{DoneableService, Namespace, NamespaceBuilder, ServiceFluent}
+import io.fabric8.kubernetes.api.model.{DoneableService, Namespace, NamespaceBuilder, ObjectMetaFluent, ServiceFluent}
 import io.fabric8.kubernetes.api.model.ServiceFluent.{MetadataNested, SpecNested}
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
@@ -49,11 +49,10 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   def withMetaData(labels: Labels, name: Name): SpecNested[DoneableService] = {
-
-    type MetaData = MetadataNested[DoneableService]
-    val namespaced: Namespaced = client.services.inNamespace(namespace)
-    val metadata: ServiceFluent.MetadataNested[DoneableService] = namespaced.createNew.withNewMetadata
-    (withLabel[MetaData](ZookeeperLabels) andThen withName[MetaData](name))(metadata).and.withNewSpec
+    type MetaData  = MetadataNested[DoneableService]
+    val metadata:           MetaData                = client.services.inNamespace(namespace).createNew.withNewMetadata
+    val withLabelsAndName:  MetadataPipe[MetaData]  = withLabel[MetaData](ZookeeperLabels) andThen withName[MetaData](name)
+    withLabelsAndName(metadata).and.withNewSpec
   }
 
   "Zookeeper and Kafka" should {

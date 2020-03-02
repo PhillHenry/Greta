@@ -1,6 +1,5 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.api.model.NamespaceFluent.MetadataNested
 import io.fabric8.kubernetes.api.model.ObjectMetaFluent
 import uk.co.odinconsultants.greta.k8s.Commands.{Labels, Name}
 

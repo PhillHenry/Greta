@@ -29,10 +29,4 @@ object ServicesOps {
 
   val ClusterIP = "ClusterIP"
 
-  type Namespaced = NonNamespaceOperation[Service, ServiceList, DoneableService, ServiceResource[Service, DoneableService]]
-
-  def serviceFrom(namespaced: Namespaced, serviceName: Name): SpecNested[DoneableService] = {
-    val metadata: ServiceFluent.MetadataNested[DoneableService] = namespaced.createNew.withNewMetadata
-    metadata.withName(serviceName).endMetadata.withNewSpec
-  }
 }
