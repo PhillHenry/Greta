@@ -9,9 +9,13 @@ import uk.co.odinconsultants.greta.k8s.ServicesOps._
 import uk.co.odinconsultants.greta.k8s.Commands._
 import uk.co.odinconsultants.greta.k8s.MetadataOps._
 
+import scala.util.Try
+
 class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
 
-  val ZookeeperLabels = Commands.Labels("zookeeper", "ph-release", "zookeeper")
+  private val instance = "ph-release"
+  val ZookeeperLabels = Labels("zookeeper", instance, "zookeeper")
+  val KafkaLabels     = Labels("kafka", instance, "kafka")
 
   val zookeeper: SpecPipe =
     withType(ClusterIP) andThen
@@ -44,21 +48,23 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     client.namespaces().create(pipe(new NamespaceBuilder().withNewMetadata).endMetadata().build())
   }
 
+  def withMetaData(labels: Labels, name: Name): SpecNested[DoneableService] = {
+
+    type MetaData = MetadataNested[DoneableService]
+    val namespaced: Namespaced = client.services.inNamespace(namespace)
+    val metadata: ServiceFluent.MetadataNested[DoneableService] = namespaced.createNew.withNewMetadata
+    (withLabel[MetaData](ZookeeperLabels) andThen withName[MetaData](name))(metadata).and.withNewSpec
+  }
+
   "Zookeeper and Kafka" should {
     "fire up" in {
-      val namespaced: Namespaced = client.services.inNamespace(namespace)
-
       createNamespace()
 
-      val metadata: ServiceFluent.MetadataNested[DoneableService] = namespaced.createNew.withNewMetadata
-      val zookeeperHeadlessMeta = withName[MetadataNested[DoneableService]](headlessZookeeperName) andThen withLabel[MetadataNested[DoneableService]](ZookeeperLabels)
-      val zkMetaData: SpecNested[DoneableService] = zookeeperHeadlessMeta(metadata).and.withNewSpec
-
       val services = List[SpecNested[DoneableService]](
-        zookeeperHeadless(zkMetaData),
-        zookeeper(serviceFrom(namespaced, zookeeperName)),
-        kafka(serviceFrom(namespaced, kafkaName)),
-        kafkaHeadless(serviceFrom(namespaced, kafkaHeadlessName))
+        zookeeperHeadless(withMetaData(ZookeeperLabels, headlessZookeeperName)),
+        zookeeper(withMetaData(ZookeeperLabels, zookeeperName)),
+        kafka(withMetaData(KafkaLabels, kafkaName)),
+        kafkaHeadless(withMetaData(KafkaLabels, kafkaHeadlessName))
       )
       services.map(_.endSpec().done())
       val actualServices  = listServices(client)
@@ -75,10 +81,18 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     }
   }
 
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    Try { deleteNamespace() }
+  }
+
   override def afterAll(): Unit = {
     super.afterAll()
+    deleteNamespace()
+  }
+
+  private def deleteNamespace() = {
     client.namespaces.withName(namespace).delete()
     client.close()
   }
-
 }
