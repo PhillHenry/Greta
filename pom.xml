@@ -6,6 +6,7 @@
   <name>${project.artifactId}</name>
   <description>Handles virtual environments with code not config.</description>
   <inceptionYear>2019</inceptionYear>
+  <packaging>pom</packaging>
   <licenses>
     <license>
       <name>GNU General Public License v3.0</name>
@@ -13,6 +14,11 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <modules>
+    <module>integration</module>
+    <module>core</module>
+  </modules>
 
   <properties>
     <maven.compiler.source>1.6</maven.compiler.source>
