@@ -10,7 +10,7 @@ object Commands {
   type Port = Int
   type Name = String
 
-  case class Label(name: Name, instance: Name, component: String)
+  case class Labels(name: Name, instance: Name, component: String)
 
   def listServices(client: KubernetesClient): Seq[Service] = {
     val services    = client.services().list().getItems().asScala

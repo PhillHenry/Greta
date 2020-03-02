@@ -2,7 +2,7 @@ package uk.co.odinconsultants.greta.k8s
 
 import io.fabric8.kubernetes.api.model.NamespaceFluent.MetadataNested
 import io.fabric8.kubernetes.api.model.ServiceFluent.SpecNested
-import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString, Namespace, NamespaceBuilder, NamespaceFluent, Service, ServiceList}
+import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString, Namespace, NamespaceBuilder, NamespaceFluent, Service, ServiceFluent, ServiceList}
 import io.fabric8.kubernetes.client.dsl.{NonNamespaceOperation, ServiceResource}
 import uk.co.odinconsultants.greta.k8s.Commands.{Name, Port}
 
@@ -27,15 +27,12 @@ object ServicesOps {
   def addPort(name: Name, port: Port, targetPort: Port): SpecPipe =
     _.addNewPort.withName(name).withPort(port).withNewTargetPort.withIntVal(targetPort).endTargetPort.endPort
 
-
-  type MetadataPipe = MetadataNested[NamespaceBuilder] => MetadataNested[NamespaceBuilder]
-
-  def withName(name: Name): MetadataPipe= _.withName(name)
-
   val ClusterIP = "ClusterIP"
 
   type Namespaced = NonNamespaceOperation[Service, ServiceList, DoneableService, ServiceResource[Service, DoneableService]]
 
-  def serviceFrom(namespaced: Namespaced, serviceName: Name): SpecNested[DoneableService] =
-    namespaced.createNew.withNewMetadata.withName(serviceName).endMetadata.withNewSpec
+  def serviceFrom(namespaced: Namespaced, serviceName: Name): SpecNested[DoneableService] = {
+    val metadata: ServiceFluent.MetadataNested[DoneableService] = namespaced.createNew.withNewMetadata
+    metadata.withName(serviceName).endMetadata.withNewSpec
+  }
 }

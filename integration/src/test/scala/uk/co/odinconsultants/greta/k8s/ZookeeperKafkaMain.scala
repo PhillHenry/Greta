@@ -7,8 +7,11 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import uk.co.odinconsultants.greta.k8s.ServicesOps._
 import uk.co.odinconsultants.greta.k8s.Commands._
+import uk.co.odinconsultants.greta.k8s.MetadataOps._
 
 class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
+
+  val ZookeeperLabels = Commands.Labels("zookeeper", "ph-release", "zookeeper")
 
   val zookeeper: SpecPipe =
     withType(ClusterIP) andThen
@@ -39,9 +42,11 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     "fire up" in {
       val namespaced: Namespaced = client.services.inNamespace(namespace)
 
-      val pipe: MetadataPipe = withName(namespace)
-      val metadata: NamespaceBuilder = withName(namespace)(new NamespaceBuilder().withNewMetadata).endMetadata()
-      client.namespaces().create(metadata.build())
+      val pipe: MetadataPipe[NamespaceBuilder] = withName[NamespaceBuilder](namespace)
+      client.namespaces().create(pipe(new NamespaceBuilder().withNewMetadata).endMetadata().build())
+
+      val zookeeperHeadlessMeta: MetadataPipe[DoneableService] = withName(headlessZookeeperName) andThen withLabel(ZookeeperLabels)
+
 
       val services = List[SpecNested[DoneableService]](
         zookeeperHeadless(serviceFrom(namespaced, headlessZookeeperName)),
