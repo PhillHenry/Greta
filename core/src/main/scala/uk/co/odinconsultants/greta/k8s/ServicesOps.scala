@@ -25,4 +25,6 @@ object ServicesOps {
 
   val ClusterIP = "ClusterIP"
 
+  val NodePort = "NodePort"
+
 }

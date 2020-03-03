@@ -55,7 +55,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     type MetaData  = MetadataNested[DoneableService]
     val metadata:           MetaData                = client.services.inNamespace(namespace).createNew.withNewMetadata
     val withLabelsAndName:  MetadataPipe[MetaData]  = withLabel[MetaData](ZookeeperLabels) andThen withName[MetaData](name)
-    withLabelsAndName(metadata).and.withNewSpec
+    withLabelsAndName(metadata).and.withNewSpec.withSelector(toMap(labels).asJava)
   }
 
   "Zookeeper and Kafka" should {
@@ -77,10 +77,10 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       serviceNames should contain (kafkaName)
       serviceNames should contain (kafkaHeadlessName)
 
-      val ss1: StatefulSet = new StatefulSetBuilder()
+      val ssZookeeper: StatefulSet = new StatefulSetBuilder()
         .withNewMetadata // will barf without metadata
           .withName(zookeeperName)
-          .withLabels(toMap(ZookeeperLabels).asJava)
+          .withLabels((toMap(ZookeeperLabels) + ("role" -> Zookeeper)).asJava)
         .endMetadata()
         .withNewSpec()
           .withNewServiceName(headlessZookeeperName)
@@ -118,7 +118,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
         .endSpec()
       .build()
 
-      client.apps().statefulSets().inNamespace(namespace).create(ss1)
+      client.apps().statefulSets().inNamespace(namespace).create(ssZookeeper)
     }
   }
 
