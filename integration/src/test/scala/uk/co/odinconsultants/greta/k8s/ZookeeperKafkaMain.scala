@@ -118,8 +118,73 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
         .endSpec()
       .build()
 
+
+
+      val ssKafka: StatefulSet = new StatefulSetBuilder()
+        .withNewMetadata // will barf without metadata
+          .withName(kafkaName)
+          .withLabels((toMap(KafkaLabels) + ("role" -> Kafka)).asJava)
+        .endMetadata()
+        .withNewSpec()
+          .withNewSelector.addToMatchLabels(toMap(KafkaLabels).asJava).endSelector()
+          .withNewServiceName(kafkaHeadlessName)
+          .withNewPodManagementPolicy("Parallel")
+          .withReplicas(1)
+          .withNewUpdateStrategy().withNewType("RollingUpdate").endUpdateStrategy
+          .withNewTemplate
+            .withNewMetadata.withName(Kafka).withLabels(toMap(KafkaLabels).asJava).endMetadata()
+            .withNewSpec
+              .withNewSecurityContext().withFsGroup(1001L).withRunAsUser(1001L).endSecurityContext()
+              .addNewContainer
+                .withName(Kafka)
+                .withImage("docker.io/bitnami/kafka:2.4.0-debian-10-r25")
+                .withImagePullPolicy("IfNotPresent")
+                .withEnv(kafkaEnv.asJava)
+                .addNewPort.withContainerPort(9092).withName("kafka").endPort()
+              .endContainer()
+            .endSpec()
+         .endTemplate()
+       .endSpec()
+     .build()
+
       client.apps().statefulSets().inNamespace(namespace).create(ssZookeeper)
+      client.apps().statefulSets().inNamespace(namespace).create(ssKafka)
     }
+  }
+
+  def kafkaEnv: List[EnvVar] = {
+    val envs = Map("BITNAMI_DEBUG" -> "false"
+      , "KAFKA_CFG_ZOOKEEPER_CONNECT" -> "ph-release-zookeeper"
+      , "KAFKA_PORT_NUMBER" -> "9092"
+      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:$(KAFKA_PORT_NUMBER)"
+      , "KAFKA_CFG_ADVERTISED_LISTENERS" -> "PLAINTEXT://$(MY_POD_NAME).ph-release-kafka-headless.default.svc.cluster.local:$(KAFKA_PORT_NUMBER)"
+      , "ALLOW_PLAINTEXT_LISTENER" -> "yes"
+      , "KAFKA_CFG_BROKER_ID" -> "-1"
+      , "KAFKA_CFG_DELETE_TOPIC_ENABLE" -> "false"
+      , "KAFKA_HEAP_OPTS" -> "-Xmx1024m -Xms1024m"
+      , "KAFKA_CFG_LOG_FLUSH_INTERVAL_MESSAGES" -> "10000"
+      , "KAFKA_CFG_LOG_FLUSH_INTERVAL_MS" -> "1000"
+      , "KAFKA_CFG_LOG_RETENTION_BYTES" -> "1073741824"
+      , "KAFKA_CFG_LOG_RETENTION_CHECK_INTERVALS_MS" -> "300000"
+      , "KAFKA_CFG_LOG_RETENTION_HOURS" -> "168"
+      , "KAFKA_CFG_MESSAGE_MAX_BYTES" -> "1000012"
+      , "KAFKA_CFG_LOG_SEGMENT_BYTES" -> "1073741824"
+      , "KAFKA_CFG_LOG_DIRS" -> "/bitnami/kafka/data"
+      , "KAFKA_CFG_DEFAULT_REPLICATION_FACTOR" -> "1"
+      , "KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR" -> "1"
+      , "KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR" -> "1"
+      , "KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM" -> "https"
+      , "KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR" -> "1"
+      , "KAFKA_CFG_NUM_IO_THREADS" -> "8"
+      , "KAFKA_CFG_NUM_NETWORK_THREADS" -> "3"
+      , "KAFKA_CFG_NUM_PARTITIONS" -> "1"
+      , "KAFKA_CFG_NUM_RECOVERY_THREADS_PER_DATA_DIR" -> "1"
+      , "KAFKA_CFG_SOCKET_RECEIVE_BUFFER_BYTES" -> "102400"
+      , "KAFKA_CFG_SOCKET_REQUEST_MAX_BYTES" -> "104857600"
+      , "KAFKA_CFG_SOCKET_SEND_BUFFER_BYTES" -> "102400"
+      , "KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS" -> "6000"
+    )
+    envs.map { case (k, v) => createEnvVar(k, v) }.toList
   }
 
   def zookeeperEnv: List[EnvVar] = {
