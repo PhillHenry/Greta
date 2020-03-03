@@ -78,7 +78,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       serviceNames should contain (kafkaHeadlessName)
 
       val ss1: StatefulSet = new StatefulSetBuilder()
-        .withNewMetadata
+        .withNewMetadata // will barf without metadata
           .withName(zookeeperName)
           .withLabels(toMap(ZookeeperLabels).asJava)
         .endMetadata()
@@ -96,7 +96,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
                 .withImage("docker.io/bitnami/zookeeper:3.5.7-debian-10-r0")
                 .withImagePullPolicy("IfNotPresent")
                 .withNewSecurityContext().withRunAsUser(1001L).endSecurityContext()
-                .withCommand("bash", "-ec", """||
+                .withCommand("bash", "-ec", """|
                                            |                # Execute entrypoint as usual after obtaining ZOO_SERVER_ID based on POD hostname
                                            |                HOSTNAME=`hostname -s`
                                            |                if [[ $HOSTNAME =~ (.*)-([0-9]+)$ ]]; then
@@ -109,6 +109,9 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
                                            |                exec /entrypoint.sh /run.sh""".stripMargin)
                 .withNewResources.withRequests(Map("cpu" -> new Quantity("250m"), "memory" -> new Quantity("256Mi")).asJava).endResources
                 .withEnv(zookeeperEnv.asJava)
+                .addNewPort.withContainerPort(2181).withName("client").endPort()
+                .addNewPort.withContainerPort(2888).withName("follower").endPort()
+                .addNewPort.withContainerPort(3888).withName("election").endPort()
               .endContainer()
             .endSpec()
           .endTemplate()
@@ -120,7 +123,8 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   def zookeeperEnv: List[EnvVar] = {
-    val envs = Map( "ZOO_TICK_TIME" -> "2000" , "ZOO_INIT_LIMIT" -> "10"
+    val envs = Map( "ZOO_TICK_TIME" -> "2000"
+      , "ZOO_INIT_LIMIT" -> "10"
       , "ZOO_SYNC_LIMIT" -> "5"
       , "ZOO_MAX_CLIENT_CNXNS" -> "60"
       , "ZOO_4LW_COMMANDS_WHITELIST" -> "srvr, mntr"
