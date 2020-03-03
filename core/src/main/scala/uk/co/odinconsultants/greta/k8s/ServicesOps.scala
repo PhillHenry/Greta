@@ -1,12 +1,8 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.api.model.NamespaceFluent.MetadataNested
 import io.fabric8.kubernetes.api.model.ServiceFluent.SpecNested
-import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString, Namespace, NamespaceBuilder, NamespaceFluent, Service, ServiceFluent, ServiceList}
-import io.fabric8.kubernetes.client.dsl.{NonNamespaceOperation, ServiceResource}
+import io.fabric8.kubernetes.api.model.{DoneableService, IntOrString}
 import uk.co.odinconsultants.greta.k8s.Commands.{Name, Port}
-
-import scala.collection.JavaConverters._
 
 object ServicesOps {
 

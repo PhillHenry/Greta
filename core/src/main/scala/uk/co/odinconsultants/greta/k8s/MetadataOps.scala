@@ -9,10 +9,17 @@ object MetadataOps {
 
   def withName[T <: ObjectMetaFluent[T]](name: Name): MetadataPipe[T]= _.withName(name)
 
+  val NameKey = "app.kubernetes.io/name"
+
+  val InstanceKey = "app.kubernetes.io/instance"
+
+  val ComponentKey = "app.kubernetes.io/component"
+
   def withLabel[T <: ObjectMetaFluent[T]](label: Labels): MetadataPipe[T] = { x =>
-    x.addToLabels("app.kubernetes.io/name", label.name)
-    x.addToLabels("app.kubernetes.io/instance", label.instance)
-    x.addToLabels("app.kubernetes.io/component", label.instance)
+    x.addToLabels(NameKey, label.name)
+      .addToLabels(InstanceKey, label.instance)
+      .addToLabels(ComponentKey, label.instance)
   }
 
+  def toMap(l: Labels): Map[Name, Name] = Map(NameKey -> l.name, InstanceKey -> l.instance, ComponentKey -> l.component)
 }
