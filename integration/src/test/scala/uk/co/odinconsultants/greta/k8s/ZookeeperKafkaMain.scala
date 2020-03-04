@@ -134,16 +134,26 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
           .withNewTemplate
             .withNewMetadata.withName(Kafka).withLabels(toMap(KafkaLabels).asJava).endMetadata()
             .withNewSpec
-              .withNewSecurityContext().withFsGroup(0L).withRunAsUser(0L).endSecurityContext()
+              .withNewSecurityContext().withFsGroup(1001L).withRunAsUser(1001L).endSecurityContext()
               .addNewContainer
                 .withName(Kafka)
                 .withImage("docker.io/bitnami/kafka:2.4.0-debian-10-r25")
                 .withImagePullPolicy("IfNotPresent")
                 .withEnv(kafkaEnv.asJava)
                 .addNewPort.withContainerPort(9092).withHostPort(9092).withName("kafka").endPort()
+                .addNewVolumeMount.withName("data").withMountPath("/bitnami/kafka").endVolumeMount()
               .endContainer()
             .endSpec()
          .endTemplate()
+          .addNewVolumeClaimTemplate()
+            .withNewMetadata().withName("data").endMetadata()
+          .withNewSpec()
+            .withAccessModes("ReadWriteOnce")
+            .withNewResources()
+              .withRequests(Map("storage" -> new Quantity("8Gi")).asJava)
+            .endResources()
+          .endSpec()
+        .endVolumeClaimTemplate()
        .endSpec()
      .build()
 
