@@ -110,7 +110,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
                                            |                exec /entrypoint.sh /run.sh""".stripMargin)
                 .withNewResources.withRequests(Map("cpu" -> new Quantity("250m"), "memory" -> new Quantity("256Mi")).asJava).endResources
                 .withEnv(zookeeperEnv.asJava)
-                .addNewPort.withContainerPort(2181).withName("client").endPort()
+                .addNewPort.withContainerPort(2181).withHostPort(2181).withName("client").endPort()
                 .addNewPort.withContainerPort(2888).withName("follower").endPort()
                 .addNewPort.withContainerPort(3888).withName("election").endPort()
               .endContainer()
@@ -140,7 +140,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
                 .withImage("docker.io/bitnami/kafka:2.4.0-debian-10-r25")
                 .withImagePullPolicy("IfNotPresent")
                 .withEnv(kafkaEnv.asJava)
-                .addNewPort.withContainerPort(9092).withName("kafka").endPort()
+                .addNewPort.withContainerPort(9092).withHostPort(9092).withName("kafka").endPort()
               .endContainer()
             .endSpec()
          .endTemplate()
@@ -156,7 +156,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
 
     val kafka: Service = client.services().list().getItems().asScala.filter(_.getMetadata.getName == kafkaName).head
     val ip = kafka.getSpec.getClusterIP
-    val name = "ph-release-kafka-0" //kafka.getMetadata.getClusterName
+    val name = s"$kafkaName-0" // TODO - this should not be hardcoded
     val port = kafka.getSpec.getPorts.asScala.head.getPort
 
     val pods = client.pods().inNamespace(namespace).list().getItems.asScala
@@ -165,7 +165,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     val fixed = Map("BITNAMI_DEBUG" -> "false"
       , "KAFKA_CFG_ZOOKEEPER_CONNECT" -> "ph-release-zookeeper"
       , "KAFKA_PORT_NUMBER" -> "9092"
-      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:$(KAFKA_PORT_NUMBER)"
+      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:9092"
       , "KAFKA_CFG_ADVERTISED_LISTENERS" -> s"PLAINTEXT://${name}.ph-release-kafka-headless.${namespace}.svc.cluster.local:${port}"
       , "ALLOW_PLAINTEXT_LISTENER" -> "yes"
       , "KAFKA_CFG_BROKER_ID" -> "-1"

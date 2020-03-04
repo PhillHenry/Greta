@@ -17,6 +17,11 @@ object ServicesOps {
   def addPort(name: Name, port: Port, targetPort: Name): SpecPipe =
       _.addNewPort.withName(name).withPort(port).withTargetPort(new IntOrString(name)).endPort
 
+
+  def addPortWithExternal(name: Name, port: Port, nodePort: Port): SpecPipe = // .addNewPort().withPort(8080).withNodePort(31719).withNewTargetPort().withIntVal(8080).endTargetPort().endPort()
+    _.addNewPort.withName(name).withPort(port).withNodePort(nodePort).withNewTargetPort.withNewStrVal(name).endTargetPort.endPort
+
+
   def addPort(name: Name, port: Port): SpecPipe =
     _.addNewPort.withName(name).withPort(port).withNewTargetPort.withNewStrVal(name).endTargetPort.endPort
 
