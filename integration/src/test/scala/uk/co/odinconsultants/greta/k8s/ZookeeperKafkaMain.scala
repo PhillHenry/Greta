@@ -167,7 +167,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
     val fixed = Map("BITNAMI_DEBUG" -> "false"
       , "KAFKA_CFG_ZOOKEEPER_CONNECT" -> "ph-release-zookeeper"
       , "KAFKA_PORT_NUMBER" -> "9092"
-      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:$(KAFKA_PORT_NUMBER"
+      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:$(KAFKA_PORT_NUMBER)"
       , "KAFKA_CFG_ADVERTISED_LISTENERS" -> "PLAINTEXT://$(MY_POD_NAME).ph-release-kafka-headless.default.svc.cluster.local:$(KAFKA_PORT_NUMBER)"
       , "ALLOW_PLAINTEXT_LISTENER" -> "yes"
       , "KAFKA_CFG_BROKER_ID" -> "-1"
@@ -209,9 +209,9 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       .build
 
     val fixedEnvars: List[EnvVar] = fixed.map { case (k, v) => createEnvVar(k, v) }.toList
-    val envs = fixedEnvars :+
-      new EnvVarBuilder().withName("MY_POD_IP").withValueFrom(myPodIp).build() :+
-      new EnvVarBuilder().withName("MY_POD_NAME").withValueFrom(myPodName).build()
+    val envs = List(
+      new EnvVarBuilder().withName("MY_POD_IP").withValueFrom(myPodIp).build(),
+      new EnvVarBuilder().withName("MY_POD_NAME").withValueFrom(myPodName).build()) ++ fixedEnvars
 
 
     println(s"Kafka config:\n ${envs.mkString("\n")}")
