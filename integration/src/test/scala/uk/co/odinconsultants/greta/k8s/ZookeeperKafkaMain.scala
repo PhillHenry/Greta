@@ -28,15 +28,14 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       addPort("election", 3888)
 
   val kafka: SpecPipe =
-    withType(LoadBalancer) andThen
+    withType(ClusterIP) andThen
       addPort("kafka", 9092)
 
   val zookeeperHeadless: SpecPipe = zookeeper andThen
     addClusterIP("None") andThen
     setPublishNotReadyAddresses(false)
 
-  val kafkaHeadless: SpecPipe = withType(ClusterIP) andThen
-    addPort("kafka", 9092) andThen withType(ClusterIP)
+  val kafkaHeadless: SpecPipe = kafka andThen withType(ClusterIP)
 
   val namespace             = "phtest"
 
