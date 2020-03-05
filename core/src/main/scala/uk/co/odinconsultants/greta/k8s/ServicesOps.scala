@@ -32,4 +32,6 @@ object ServicesOps {
 
   val NodePort = "NodePort"
 
+  val LoadBalancer = "LoadBalancer"
+
 }

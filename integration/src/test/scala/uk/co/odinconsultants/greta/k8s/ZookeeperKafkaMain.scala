@@ -1,6 +1,6 @@
 package uk.co.odinconsultants.greta.k8s
 
-import io.fabric8.kubernetes.api.model.{DoneableService, EnvVar, Namespace, NamespaceBuilder, ObjectMetaFluent, Quantity, Service, ServiceFluent}
+import io.fabric8.kubernetes.api.model.{DoneableService, EnvVar, EnvVarBuilder, EnvVarSourceBuilder, Namespace, NamespaceBuilder, ObjectMetaFluent, Quantity, Service, ServiceFluent}
 import io.fabric8.kubernetes.api.model.ServiceFluent.{MetadataNested, SpecNested}
 import io.fabric8.kubernetes.api.model.apps.{StatefulSet, StatefulSetBuilder}
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
@@ -28,14 +28,15 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       addPort("election", 3888)
 
   val kafka: SpecPipe =
-    withType(ClusterIP) andThen
+    withType(LoadBalancer) andThen
       addPort("kafka", 9092)
 
   val zookeeperHeadless: SpecPipe = zookeeper andThen
     addClusterIP("None") andThen
     setPublishNotReadyAddresses(false)
 
-  val kafkaHeadless: SpecPipe = kafka andThen withType(ClusterIP)
+  val kafkaHeadless: SpecPipe = withType(ClusterIP) andThen
+    addPort("kafka", 9092) andThen withType(ClusterIP)
 
   val namespace             = "phtest"
 
@@ -129,7 +130,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
           .withNewSelector.addToMatchLabels(toMap(KafkaLabels).asJava).endSelector()
           .withNewServiceName(kafkaHeadlessName)
           .withNewPodManagementPolicy("Parallel")
-          .withReplicas(1)
+          .withReplicas(2)
           .withNewUpdateStrategy().withNewType("RollingUpdate").endUpdateStrategy
           .withNewTemplate
             .withNewMetadata.withName(Kafka).withLabels(toMap(KafkaLabels).asJava).endMetadata()
@@ -140,7 +141,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
                 .withImage("docker.io/bitnami/kafka:2.4.0-debian-10-r25")
                 .withImagePullPolicy("IfNotPresent")
                 .withEnv(kafkaEnv.asJava)
-                .addNewPort.withContainerPort(9092).withHostPort(9092).withName("kafka").endPort()
+                .addNewPort.withContainerPort(9092).withName("kafka").endPort()
                 .addNewVolumeMount.withName("data").withMountPath("/bitnami/kafka").endVolumeMount()
               .endContainer()
             .endSpec()
@@ -163,20 +164,11 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   def kafkaEnv: List[EnvVar] = {
-
-    val kafka: Service = client.services().list().getItems().asScala.filter(_.getMetadata.getName == kafkaName).head
-    val ip = kafka.getSpec.getClusterIP
-    val name = s"$kafkaName-0" // TODO - this should not be hardcoded
-    val port = kafka.getSpec.getPorts.asScala.head.getPort
-
-    val pods = client.pods().inNamespace(namespace).list().getItems.asScala
-    println(s"ip = $ip, name = $name, port = $port, pods = $pods")
-
     val fixed = Map("BITNAMI_DEBUG" -> "false"
       , "KAFKA_CFG_ZOOKEEPER_CONNECT" -> "ph-release-zookeeper"
       , "KAFKA_PORT_NUMBER" -> "9092"
-      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:9092"
-      , "KAFKA_CFG_ADVERTISED_LISTENERS" -> s"PLAINTEXT://${name}.ph-release-kafka-headless.${namespace}.svc.cluster.local:${port}"
+      , "KAFKA_CFG_LISTENERS" -> "PLAINTEXT://:$(KAFKA_PORT_NUMBER"
+      , "KAFKA_CFG_ADVERTISED_LISTENERS" -> "PLAINTEXT://$(MY_POD_NAME).ph-release-kafka-headless.default.svc.cluster.local:$(KAFKA_PORT_NUMBER)"
       , "ALLOW_PLAINTEXT_LISTENER" -> "yes"
       , "KAFKA_CFG_BROKER_ID" -> "-1"
       , "KAFKA_CFG_DELETE_TOPIC_ENABLE" -> "false"
@@ -204,11 +196,26 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       , "KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS" -> "6000"
     )
 
+    val myPodName = new EnvVarSourceBuilder()
+      .withNewFieldRef
+      .withFieldPath("metadata.name")
+      .endFieldRef
+      .build
+
+    val myPodIp = new EnvVarSourceBuilder()
+      .withNewFieldRef
+      .withFieldPath("status.podIP")
+      .endFieldRef
+      .build
+
+    val fixedEnvars: List[EnvVar] = fixed.map { case (k, v) => createEnvVar(k, v) }.toList
+    val envs = fixedEnvars :+
+      new EnvVarBuilder().withName("MY_POD_IP").withValueFrom(myPodIp).build() :+
+      new EnvVarBuilder().withName("MY_POD_NAME").withValueFrom(myPodName).build()
 
 
-    val envs = fixed + ("MY_POD_NAME" -> name) + ("MY_POD_IP" -> ip)
-
-    envs.map { case (k, v) => createEnvVar(k, v) }.toList
+    println(s"Kafka config:\n ${envs.mkString("\n")}")
+    envs
   }
 
   def zookeeperEnv: List[EnvVar] = {
