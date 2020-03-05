@@ -218,7 +218,7 @@ class ZookeeperKafkaMain extends WordSpec with Matchers with BeforeAndAfterAll {
       , "ZOO_MAX_CLIENT_CNXNS" -> "60"
       , "ZOO_4LW_COMMANDS_WHITELIST" -> "srvr, mntr"
       , "ZOO_LISTEN_ALLIPS_ENABLED" -> "no"
-      , "ZOO_SERVERS" -> "ph-release-zookeeper-0.ph-release-zookeeper-headless.default.svc.cluster.local:2888:3888"
+      , "ZOO_SERVERS" -> "ph-release-zookeeper-0.ph-release-zookeeper-headless.default.svc.cluster.local:2181:3888"
       , "ZOO_ENABLE_AUTH" -> "no"
       , "ZOO_HEAP_SIZE" -> "1024"
       , "ZOO_LOG_LEVEL" -> "ERROR"
