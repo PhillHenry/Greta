@@ -28,7 +28,7 @@
     <scala.compat.version>2.12</scala.compat.version>
     <cats.version>2.0.0</cats.version>
     <kubernetes-client.version>4.6.4</kubernetes-client.version>
-    <kubernetesio.version>5.0.0</kubernetesio.version>
+    <kubernetesio.version>9.0.2</kubernetesio.version>
   </properties>
 
   <dependencies>
